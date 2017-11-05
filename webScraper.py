@@ -1,5 +1,6 @@
 import os
 import json
+import numpy
 from urllib.request import urlopen
 
 # Esta función toma la información de entrada y la transforma en una tabla
@@ -8,6 +9,7 @@ from urllib.request import urlopen
 # -> nombreY: Cadena. Nombre de la variable del eje Y de la tabla.
 # -> valoresY: Lista. Contiene todos los valores de que deben aparecer en el eje Y de la tabla. La primera columna.
 # -> valores: Lista. El resto de valores que forman parte del propio contenido de la tabla.
+# <- La tabla construída.
 def construyeTabla(nombreX, valoresX, nombreY, valoresY, valores):
     
     # Crear la tabla.
@@ -42,8 +44,10 @@ def construyeTabla(nombreX, valoresX, nombreY, valoresY, valores):
 # -> nombreFichero: Cadena. Nombre del fichero que debe escribirse en disco sin extensión ya que se asume ".csv"
 def escribeFicheroCSV(tablaDatos, nombreFichero):
     
+    # Directorio donde se creará el fichero CSV.
     directorio = "./ficherosCSV"
     
+    # Asegurar que el directorio existe, si no, crearlo.
     if not os.path.exists(directorio):
         os.makedirs(directorio)
     
@@ -61,6 +65,41 @@ def escribeFicheroCSV(tablaDatos, nombreFichero):
     # Finalmente cerrar el fichero.
     ficheroSalida.close()
 
+# Esta función toma como entrada una tabla y le añade varias columnas correspondientes diferentes medidas de estadística descriptiva referidas a los distintos valores de la dimensión representada en vertical.
+# Las medidas estadísticas que se hallan son las siguientes: valor máximo y mínimo, media, mediana, desviación estándar y varianza.
+# -> tabla: Lista de listas. La tabla de entrada.
+def agregarColumnasEstadisticas(tabla):
+    
+    # Agregación del máximo
+    tabla[0].append("Valor máximo")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.max(tabla[i][1:]))
+    
+    # Agregación del máximo
+    tabla[0].append("Valor mínimo")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.min(tabla[i][1:]))
+    
+    # Agregación de la media
+    tabla[0].append("Media")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.mean(tabla[i][1:]))
+        
+    # Agregación de la mediana
+    tabla[0].append("Mediana")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.median(tabla[i][1:]))
+        
+    # Agregación de la mediana
+    tabla[0].append("Desviación estándar")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.std(tabla[i][1:]))
+        
+    # Agregación de la mediana
+    tabla[0].append("Varianza")
+    for i in range(1, len(tabla)):
+        tabla[i].append(numpy.var(tabla[i][1:]))
+    
 # Esta función toma como entrada un código correspondiente a una fuente contaminante y extrae de la web de Eurostat los datos de producción de gases de efecto invernadero referidos a esa fuente para cada uno de los países de la Unión entre 1990 y 2015. Tras haberlos recogido los graba en un fichero CSV cuyo nombre resulta de prefijar la cadena "GreenHouseGases_" y el código de la fuente contaminante.
 # -> codigo: Cadena. Código correspondiente a la fuente contaminante.
 def procesaDatosFuenteContaminante(codigo):
@@ -83,9 +122,12 @@ def procesaDatosFuenteContaminante(codigo):
     # Construye la tabla
     tabla = construyeTabla("Año", dimensionTiempo, "Pais", dimensionPais, valores)
 
+    # Agregar columnas estadísticas
+    agregarColumnasEstadisticas(tabla)
+    
     # Escribe la tabla construida anteriormente en un fichero CSV en disco.
     escribeFicheroCSV(tabla, "GreenHouseGases_" + codigo)
-
+    
 # Comienzo del programa principal
 
 # La variable codigosFuenteContaminante almacena todas las fuentes contaminantes posibles y existentes en el portal Eurostat para el dataset de gases de efecto invernadero producidos en Europa. Estos códigos son importantes para extraer los datos en formato JSON de este portal web.
